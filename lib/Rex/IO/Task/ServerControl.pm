@@ -23,12 +23,13 @@ my @data = <DATA>;
 
 task "prepare", sub {
 
-   install package => [qw/servercontrol servercontrol-mod-apache rsync/];
+   install package => [qw/servercontrol rsync/];
 
    if(!is_dir("/services")) {
       mkdir("/services");
       mkdir("/services/templates");
       mkdir("/services/templates/apache2");
+      mkdir("/services/templates/memcache");
       mkdir("/services/layouts");
    }
 
@@ -43,7 +44,7 @@ task "create-apache", sub {
    my $layout = $fp->read("layouts/apache.yml");
    my $httpd_conf = $fp->read("etc/httpd.conf");
 
-   install package => qw/apache2/;
+   install package => qw/apache2 servercontrol-mod-apache/;
 
    service "apache2" => "ensure", "stopped";
 
@@ -84,6 +85,33 @@ task "restart-apache", sub {
    my $param = shift;
    run "/services/" . $param->{name} . "/stop";
    run "/services/" . $param->{name} . "/start";
+
+};
+
+task "create-memcache", sub {
+
+   my $param = shift;
+
+   my $fp = Rex::File::Parser::Data->new(data => \@data);
+
+   my $layout = $fp->read("layouts/memcache.yml");
+   my $memcache_conf = $fp->read("etc/memcache.conf");
+
+   file "/services/layouts/memcache.yml",
+      content => $layout;
+
+   file "/services/templates/memcache/memcache.conf",
+      content => $memcache_conf;
+
+   install package => [qw/memcached servercontrol-mod-memcache/];
+
+   service "memcached" => "ensure", "stopped";
+
+   run "servercontrol --module=Memcached --schema=Debian --path=/services/" . $param->{name} . " --name=" . $param->{name} . " --user=nobody --group=nogroup --fs-layout=/services/layouts/memcache.yml --template=/services/templates/memcache/memcache.conf --create";
+
+   run "sc_create_initfile --path=/services/" . $param->{name} . " --name=" . $param->{name};
+
+   service $param->{name} => "ensure", "started";
 
 };
 
@@ -164,6 +192,62 @@ Files:
       httpdconf:
          name: etc/httpd.conf
          call: <% sub { ServerControl::Template->parse(@_); } %>
+
+@end
+
+
+@layouts/memcache.yml
+Directories:
+   Base:
+      bin:
+         name: bin
+         chmod: 755
+         user: root
+         group: root
+   Runtime:
+      pid:
+         name: var/run
+         chmod: 755
+         user: <%= ServerControl::Args->get->{'user'} %>
+         group: root
+      log:
+         name: var/log
+         chmod: 755
+         user: <%= ServerControl::Args->get->{'user'} %>
+         group: root
+
+   Configuration:
+      conf:
+         name: etc
+         chmod: 755
+         user: <%= ServerControl::Args->get->{'user'} %>
+         group: root
+
+Files:
+   Exec:
+      memcached:
+         name: bin/memcached-<%= __PACKAGE__->get_name %>
+         link: <%= ServerControl::Schema->get('memcached') %>
+   Configuration:
+      conf:
+         name: etc/memcache.conf
+         call: <% sub { ServerControl::Template->parse(@_); } %>
+
+@end
+
+@etc/memcache.conf
+# daemon
+-d
+
+logfile @instance_path@/var/log/@name@.log
+
+-P @instance_path@/var/run/@name@.pid
+
+-m 64
+
+-p 11211
+
+-u @user@
 
 @end
 
