@@ -15,6 +15,7 @@ use Rex::Commands::Pkg;
 use Rex::Commands::File;
 use Rex::Commands::Fs;
 use Rex::Commands::Service;
+use Rex::Commands::Gather;
 
 use Rex::File::Parser::Data;
 
@@ -30,12 +31,15 @@ task "prepare", sub {
       mkdir("/services/templates");
       mkdir("/services/templates/apache2");
       mkdir("/services/templates/memcache");
+      mkdir("/services/templates/mysql");
       mkdir("/services/layouts");
    }
 
 };
 
 task "create-apache", sub {
+
+   needs "prepare";
 
    my $param = shift;
 
@@ -92,6 +96,8 @@ task "create-memcache", sub {
 
    my $param = shift;
 
+   needs "prepare";
+
    my $fp = Rex::File::Parser::Data->new(data => \@data);
 
    my $layout = $fp->read("layouts/memcache.yml");
@@ -114,6 +120,46 @@ task "create-memcache", sub {
    service $param->{name} => "ensure", "started";
 
 };
+
+task "create-mysql", sub {
+
+   my $param = shift;
+
+   needs "prepare";
+
+   my $fp = Rex::File::Parser::Data->new(data => \@data);
+
+   my $layout = $fp->read("layouts/mysql.yml");
+   my $my_cnf = $fp->read("etc/my.cnf");
+
+   file "/services/layouts/mysql.yml",
+      content => $layout;
+
+   file "/services/templates/mysql/my.cnf",
+      content => $my_cnf;
+
+   install package => [qw/mysql-server servercontrol-mod-mysql/];
+
+   service "mysql" => "ensure", "stopped";
+
+   run "servercontrol --module=MySQL --schema=Debian --path=/services/" . $param->{name} . " --name=" . $param->{name} . " --template=/services/templates/mysql/my.cnf --fs-layout=/services/layouts/mysql.yml --create --user=nobody --group=nogroup";
+
+   run "sc_create_initfile --path=/services/" . $param->{name} . " --name=" . $param->{name};
+
+   service $param->{name} => "ensure", "started";
+
+   file "/root/init.sql",
+      content => "use mysql; delete from user where User='root' and Host <> '%'; update user set host='%' where user='root'; flush privileges;";
+
+   my $pw = get_random(15, 'a' .. 'z', 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+   run "mysqladmin -h127.0.0.1 -uroot password $pw";
+   run "mysql -h127.0.0.1 -uroot -p$pw < /root/init.sql";
+
+   my $net_info = network_interfaces();
+   Rex::IO::d_print("You mysql instance is now available under mysql://root:$pw@" . $net_info->{eth0}->{ip});
+};
+
+
 
 1;
 
@@ -232,6 +278,76 @@ Files:
       conf:
          name: etc/memcache.conf
          call: <% sub { ServerControl::Template->parse(@_); } %>
+
+@end
+
+@layouts/mysql.yml
+Directories:
+   Base:
+      root:
+         name: "."
+         chmod: 755
+         user: root
+         group: root
+      bin:
+         name: bin
+         chmod: 755
+         user: root
+         group: root
+      data:
+         name: var/lib/mysql
+         chmod: 755
+         user: <%= ServerControl::Args->get->{'user'} %>
+         group: root
+   Configuration:
+      conf:
+         name: etc
+         chmod: 700
+         user: root
+         group: root
+      confd:
+         name: etc/mysql-conf.d
+         chmod: 700
+         user: root
+         group: root
+   Runtime:
+      pid:
+         name: var/run
+         chmod: 755
+         user: <%= ServerControl::Args->get->{'user'} %>
+         group: root
+      log:
+         name: var/log
+         chmod: 755
+         user: <%= ServerControl::Args->get->{'user'} %>
+         group: root
+
+Files:
+   Exec:
+      mysqld:
+         name: bin/mysqld-<%= __PACKAGE__->get_name %>
+         link: <%= ServerControl::Schema->get('mysqld_safe') %>
+   Configuration:
+      mycnf:
+         name: etc/my.cnf
+         call: <% sub { ServerControl::Template->parse(@_); } %>
+
+@end
+
+@etc/my.cnf
+[mysqld]
+datadir=@instance_path@/var/lib/mysql
+socket=@instance_path@/var/run/@name@.sock
+user=@user@
+port=3306
+
+max_connections = 100
+
+[mysqld_safe]
+log-error=@instance_path@/var/log/@name@.log
+pid-file=@instance_path@/var/run/@name@.pid
+
+!includedir @instance_path@/etc/mysql-conf.d
 
 @end
 

@@ -82,7 +82,6 @@ sub create {
 
       my $server = $data->{"result"}->{"ips"}->{"public"}->[0];
       Rex::Task->run("IO:Task:Repository:initialize", $server);
-      Rex::Task->run("IO:Task:ServerControl:prepare", $server);
 
       my $num_instances = sprintf ("%.2i", $self->config->get($service, "instances"));
 
