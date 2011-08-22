@@ -53,6 +53,14 @@ task "create-apache", sub {
    file "/services/templates/apache2/httpd.conf",
       content => $httpd_conf;
 
+};
+
+task "create-apache-static", sub {
+
+   my $param = shift;
+
+   needs "create-apache";
+
    run "servercontrol --schema=Debian --module=Apache --path=/services/" . $param->{name} . " --name=" . $param->{name} . " --user=www-data --group=www-data --fs-layout=/services/layouts/apache.yml --template=/services/templates/apache2/httpd.conf --create --ip='*' --port=80 --internal_net=127.0.0.0/8 --serveradmin=webmaster\@localhost";
 
 };
@@ -61,20 +69,9 @@ task "create-apache-php", sub {
 
    my $param = shift;
 
-   my $fp = Rex::File::Parser::Data->new(data => \@data);
+   needs "create-apache";
 
-   my $layout = $fp->read("layouts/apache.yml");
-   my $httpd_conf = $fp->read("etc/httpd.conf");
-
-   install package => [qw/apache2 libapache2-mod-php5/];
-
-   service "apache2" => "ensure", "stopped";
-
-   file "/services/layouts/apache.yml",
-      content => $layout;
-
-   file "/services/templates/apache2/httpd.conf",
-      content => $httpd_conf;
+   install package => [qw/libapache2-mod-php5/];
 
    run "servercontrol --schema=Debian --module=Apache --path=/services/" . $param->{name} . " --name=" . $param->{name} . " --user=www-data --group=www-data --fs-layout=/services/layouts/apache.yml --template=/services/templates/apache2/httpd.conf --create --ip='*' --port=80 --internal_net=127.0.0.0/8 --serveradmin=webmaster\@localhost --with-php";
 

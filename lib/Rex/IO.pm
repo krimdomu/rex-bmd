@@ -84,16 +84,21 @@ sub create {
       Rex::Task->run("IO:Task:Repository:initialize", $server);
       Rex::Task->run("IO:Task:ServerControl:prepare", $server);
 
-      if($self->config->get($service, "type") eq "static") {
-         Rex::Task->run("IO:Task:ServerControl:create-apache", $server, {
-            name => "${service}01"
-         });
+      my $num_instances = sprintf ("%.2i", $self->config->get($service, "instances"));
+
+      d_print("Hard setting instances to 1");
+      $num_instances = "01";
+
+      my $class_to_load = "Rex::IO::Service::" . ucfirst($self->config->get($service, "type"));
+      eval "require $class_to_load;";
+
+      if($@) {
+         d_print("Failed loading Service-Type: " . $self->config->get($service, "type"));
+         d_print($@);
+         exit 1;
       }
-      elsif($self->config->get($service, "type") eq "php") {
-         Rex::Task->run("IO:Task:ServerControl:create-apache-php", $server, {
-            name => "${service}01"
-         });
-      }
+
+      $class_to_load->run($server, $service, $num_instances);
    }
    
 }
