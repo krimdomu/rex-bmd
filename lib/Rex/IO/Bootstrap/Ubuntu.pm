@@ -23,7 +23,7 @@ sub get_dist_name {
 sub prepare_repo_data {
    my ($self, $codename) = @_;
 
-   say join ("\n", run "wget -O - http://rex.linux-files.org/DPKG-GPG-KEY-REXIFY-REPO | apt-key add -");
+   say join ("\n", run "wget -O - http://stage.rex.linux-files.org/DPKG-GPG-KEY-REXIFY-REPO | apt-key add -");
 
    file "/etc/apt/sources.list",
       content => "# See http://help.ubuntu.com/community/UpgradeNotes for how to upgrade to
@@ -76,7 +76,7 @@ deb-src http://security.ubuntu.com/ubuntu $codename-security multiverse
 deb http://extras.ubuntu.com/ubuntu $codename main
 deb-src http://extras.ubuntu.com/ubuntu $codename main
 
-deb http://rex.linux-files.org/ubuntu/ $codename rex
+deb http://stage.rex.linux-files.org/ubuntu/ $codename rex
 ";
 
    say join("\n", run "apt-get update");
