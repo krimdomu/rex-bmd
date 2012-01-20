@@ -13,6 +13,8 @@ require Rex::IO::Args;
 use Data::Dumper;
 use Rex::Commands;
 
+our $VERSION = "0.0.1";
+
 sub new {
    my $that = shift;
    my $proto = ref($that) || $that;

@@ -88,7 +88,9 @@ sub call {
          file "/boot/grub/menu.lst",
             content => "";
 
-         install package => [qw/wget grub linux-image-server parted perl syslinux-common/];
+         install package => [qw/wget grub linux-image-server
+                                parted perl syslinux-common
+                                libwww-perl libyaml-perl/];
 
          file "/etc/hostname",
             content => "nfs-image\n";
@@ -160,7 +162,7 @@ DEFAULT RexOsDeployment
   
 LABEL RexOsDeployment
 KERNEL $kernel
-APPEND root=/dev/nfs initrd=$initrd nfsroot=$ip:$::path/nfs-image/filesystem.d ip=dhcp rw
+APPEND root=/dev/nfs initrd=$initrd nfsroot=$ip:$::path/nfs-image/filesystem.d ip=dhcp rw REXIO_BOOTSTRAP_FILE=http://$ip/rex-bootstrap.yml
 
 ";
 
