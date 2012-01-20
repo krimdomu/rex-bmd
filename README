@@ -1,27 +1,6 @@
-=== rex.io - A cloud deployment cli 
+=== rex.io - A deployment cli 
 
 --------------------------------------------------------------------------------
  This project is work in progress. It may change unexpectedly.
 --------------------------------------------------------------------------------
 
-Use ini files to deploy services on all the cloud providers supported by (R)?ex.
-
-$> cat cloud.ini 
-[cloud]
-service = Jiffybox
-access_key = m7aPye6M0Xx7kW9j9JLdSLKGfv95md5x
-
-[systemauth]
-user = root
-password = blahblah1234
-
-[www]
-type = static
-root = static
-instances = 1
-
-[backend]
-type = php
-root = backend
-instances = 1
-;dns = backend.rexify.org
