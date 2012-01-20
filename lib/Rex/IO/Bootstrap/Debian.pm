@@ -4,13 +4,14 @@
 # vim: set ts=3 sw=3 tw=0:
 # vim: set expandtab:
    
-package Rex::IO;
+package Rex::IO::Bootstrap::Debian;
    
 use strict;
 use warnings;
 
 require Rex::IO::Args;
-use Data::Dumper;
+
+use Rex::Commands::Gather;
 
 sub new {
    my $that = shift;
@@ -25,21 +26,12 @@ sub new {
 sub run {
    my ($self) = @_;
 
-   my $args = Rex::IO::Args->get;
+   my $args    = Rex::IO::Args->get;
 
-   unless(exists $args->{module}) {
-      die("No module given.");
-   }
+   my $dist    = $args->{dist};
+   my $version = $args->{version};
+   my $arch    = $args->{arch};
 
-   my $mod = "Rex::IO::Module::" . $args->{module};
-   eval "use $mod";
-
-   if($@) {
-      die("Can't load $mod");
-   }
-
-   my $mod_o = $mod->new;
-   $mod_o->run;
 }
 
 1;

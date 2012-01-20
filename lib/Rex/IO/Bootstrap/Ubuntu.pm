@@ -1,18 +1,16 @@
-#!/opt/local/bin/perl -w
-
 #
 # (c) Jan Gehring <jan.gehring@gmail.com>
 # 
 # vim: set ts=3 sw=3 tw=0:
 # vim: set expandtab:
    
-
+package Rex::IO::Bootstrap::Ubuntu;
+   
 use strict;
 use warnings;
 
-use Rex::IO;
-use Rex::IO::Args;
+use Rex::IO::Bootstrap::Debian;
+use base qw(Rex::IO::Bootstrap::Debian);
 
-my $rex_io = Rex::IO->new;
-$rex_io->run;
 
+1;
