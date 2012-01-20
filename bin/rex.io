@@ -14,16 +14,8 @@ use Rex::IO;
 
 use Getopt::Long;
 
-my $opts = {};
-GetOptions($opts, "create", "push");
+#my $opts = {};
+#GetOptions($opts, "create", "push");
 
 my $rex_io = Rex::IO->new;
-
-if($opts->{"create"}) {
-   $rex_io->create;
-}
-
-if($opts->{"push"}) {
-   $rex_io->deploy;
-}
 
