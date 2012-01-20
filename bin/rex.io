@@ -1,4 +1,4 @@
-#!/opt/local/bin/perl -w
+#!/usr/bin/perl -w
 
 #
 # (c) Jan Gehring <jan.gehring@gmail.com>
@@ -10,9 +10,16 @@
 use strict;
 use warnings;
 
+use Cwd qw(getcwd);
 use Rex::IO;
 use Rex::IO::Args;
 
-my $rex_io = Rex::IO->new;
-$rex_io->run;
-
+if($< == 0 && $> == 0) {
+   $::path = getcwd;
+   my $rex_io = Rex::IO->new(path => $::path);
+   $rex_io->call;
+}
+else {
+   print "Please run rex.io with as root.\n";
+   exit 1;
+}

@@ -11,6 +11,7 @@ use warnings;
 
 require Rex::IO::Args;
 use Data::Dumper;
+use Rex::Commands;
 
 sub new {
    my $that = shift;
@@ -19,10 +20,12 @@ sub new {
 
    bless($self, $proto);
 
+   logging to_file => "/dev/null";
+
    return $self;
 }
 
-sub run {
+sub call {
    my ($self) = @_;
 
    my $args = Rex::IO::Args->get;
@@ -39,7 +42,7 @@ sub run {
    }
 
    my $mod_o = $mod->new;
-   $mod_o->run;
+   $mod_o->call;
 }
 
 1;

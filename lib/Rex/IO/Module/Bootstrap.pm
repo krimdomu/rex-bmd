@@ -22,7 +22,7 @@ sub new {
    return $self;
 }
 
-sub run {
+sub call {
    my ($self) = @_;
 
    my $args = Rex::IO::Args->get;
@@ -48,9 +48,7 @@ sub run {
 
    my $dist_mod_o = $dist_mod->new;
 
-   print Dumper($dist_mod_o);
-
-   $dist_mod_o->run;
+   $dist_mod_o->call;
 }
 
 1;
