@@ -77,10 +77,14 @@ sub call {
          say "Running apt-get update";
          run "apt-get update";
 
-         say "Installing wget and libdigest-perl";
-         run "apt-get -y install wget libdigest-perl";
+         eval {
+            say "Installing wget and libdigest-perl";
+            run "apt-get -y install wget";
 
-         $self->prepare_repo_data($codename);
+            $self->prepare_repo_data($codename);
+
+            run "apt-get -y install libdigest-perl";
+         };
 
          say "Installing rex";
          run "apt-get -y install rex rex-io";
@@ -90,7 +94,7 @@ sub call {
             content => "";
 
          install package => [qw/wget grub linux-image-server
-                                parted perl syslinux-common
+                                parted perl syslinux
                                 libwww-perl libyaml-perl/];
 
          file "/etc/hostname",
