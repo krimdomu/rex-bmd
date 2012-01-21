@@ -1,0 +1,68 @@
+=pod
+
+=head1 rex.io - A deployment cli 
+
+With rex.io it is possible to do automated deployments of hardware and virtual machines.
+
+rex.io is in a very early development stage (alpha). Currently it supports Ubuntu 10.04, 11.04 and 11.10.
+
+=head2 Dependencies
+
+To deploy your hardware/vms you need a working dhcpd server and a tfptd server.
+
+=head2 Example
+
+This will create a nfs-image and a base image for deployment.
+
+ bash# rex.io --module=Bootstrap --dist=Ubuntu --version=11.10 --arch=amd64
+
+You can describe the installation with a simple YAML file.
+
+ os: Ubuntu
+ version: 11.10
+ url: http://172.16.0.10/ubuntu-11.10.tar.gz
+
+ system:
+   default_language: de_DE.UTF-8
+   languages:
+      - de_DE.UTF-8
+      - de_DE@euro
+   keyboard: de-latin1-nodeadkeys
+   timezone: Europe/Berlin
+
+ boot:
+   loader: grub
+   write_to: vda
+
+ partitions:
+   clear:
+      device: vda
+      initialize: gpt
+   /:
+      fstype: ext3
+      size: 15000
+      ondisk: vda
+      primary: 1
+      boot: 1
+   swap:
+      fstype: swap
+      size: 1000
+      ondisk: vda
+
+ network:
+   eth0:
+      proto: static
+      ip: 172.16.10.10
+      netmask: 255.255.255.0
+      gateway: 172.16.0.10
+
+ authentication:
+   root:
+      uid: 0
+      password: f00b4r
+
+ packages:
+   - grub
+   - linux-image-server
+   - openssh-server
+
