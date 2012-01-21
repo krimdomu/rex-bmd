@@ -53,7 +53,8 @@ sub call {
       run "debootstrap $codename nfs-image/filesystem.d 2>&1 >log/bootstrap.log";
    }
    else {
-      die("Currently only support for Debian like systems.");
+      print "To create debian/ubuntu images you must use a debian/ubuntu system.";
+      exit 1;
    }
 
    file "$::path/nfs-image/filesystem.d/etc/resolv.conf",
@@ -82,7 +83,7 @@ sub call {
          $self->prepare_repo_data($codename);
 
          say "Installing rex";
-         run "apt-get -y install rex";
+         run "apt-get -y install rex rex-io";
 
          mkdir "/boot/grub";
          file "/boot/grub/menu.lst",
