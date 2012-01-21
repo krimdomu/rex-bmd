@@ -145,6 +145,7 @@ iface eth0 inet dhcp
    file "$::path/nfs-image/filesystem.d/etc/rc.local",
       mode    => 777,
       content => "#!/bin/sh -e
+export HOME=/root
 /usr/bin/rex.io --module=Bootstrap 
       ";
 
