@@ -212,6 +212,15 @@ sub _base_configuration {
    if(exists $conf->{keyboard}) {
       keyboard $conf->{keyboard};
    }
+
+   if(exists $conf->{hostname}) {
+      hostname $conf->{hostname};
+   }
+
+   if(exists $conf->{domainname}) {
+      domainname $conf->{domainname};
+   }
+
 }
 
 sub _network_configuration {

@@ -157,6 +157,8 @@ iface eth0 inet dhcp
    $kernel =~ s/^tftpd-root\///;
    $initrd =~ s/^tftpd-root\///;
 
+   run "chmod -R 777 tftpd-root/*";
+
    file "$::path/tftpd-root/pxelinux.cfg/default",
       content => "
 DEFAULT RexOsDeployment
