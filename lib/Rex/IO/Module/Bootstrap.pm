@@ -191,6 +191,8 @@ sub _chroot {
       waitpid($pid, 0);
       say "Long lost child came home... continuing work...";
       run "umount /mnt";
+      run "sync";
+      run "/sbin/reboot";
    }
 }
 

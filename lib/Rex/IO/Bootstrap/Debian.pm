@@ -125,9 +125,6 @@ iface eth0 inet dhcp
 
       }
 
-      create_user "root",
-         uid => 0,
-         password => "f00b4r";
 
       run "umount /dev/pts";
       run "umount /proc";
@@ -144,6 +141,13 @@ iface eth0 inet dhcp
    say "Creating baseimgage";
    cp "nfs-image/filesystem.d/etc/initramfs-tools/initramfs.conf.bak", "nfs-image/filesystem.d/etc/initramfs-tools/initramfs.conf";
    run "cd nfs-image/filesystem.d; tar czf $::path/base-image/\L$dist-$version.tar.gz *";
+
+   file "$::path/nfs-image/filesystem.d/etc/rc.local",
+      mode    => 777,
+      content => "#!/bin/sh -e
+/usr/bin/rex.io --module=Bootstrap 
+      ";
+
 
    say "Populating tftpd-root";
    run "cp nfs-image/filesystem.d/boot/initrd* nfs-image/filesystem.d/boot/vmlinuz* tftpd-root";
