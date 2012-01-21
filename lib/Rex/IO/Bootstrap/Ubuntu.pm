@@ -97,4 +97,10 @@ sub get_codename_for {
    return $codename_for{$version};
 }
 
+sub get_mirror {
+   my ($self) = @_;
+   return "http://us.archive.ubuntu.com/ubuntu";
+}
+
+
 1;

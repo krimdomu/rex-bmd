@@ -69,6 +69,11 @@ sub get_codename_for {
    return $codename_for{$version};
 }
 
+sub get_mirror {
+   my ($self) = @_;
+   return "http://ftp.de.debian.org/debian";
+}
+
 
 sub call {
    my ($self) = @_;
@@ -88,7 +93,7 @@ sub call {
 
    if(is_debian) {
       say "Creating nfs-image...";
-      run "debootstrap $codename nfs-image/filesystem.d 2>&1 >log/bootstrap.log";
+      run "debootstrap $codename nfs-image/filesystem.d " . $self->get_mirror() . " 2>&1 >log/bootstrap.log";
    }
    else {
       print "To create debian/ubuntu images you must use a debian/ubuntu system.";
