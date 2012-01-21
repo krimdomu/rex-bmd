@@ -114,7 +114,7 @@ sub _mount {
    my ($self) = @_;
    my $root_device = $self->{"__mount_point"}->{"/"};
 
-   mount $root_device->{"device"}, "/mnt",
+   mount "/dev/".$root_device->{"device"}, "/mnt",
       fs => $root_device->{"fstype"};
 
    for my $mount_point (keys %{ $self->{"__mount_point"} }) {
@@ -123,7 +123,7 @@ sub _mount {
       next if($mount_point eq "none");
 
       mkdir "/mnt$mount_point" unless(is_dir("/mnt$mount_point"));
-      mount $self->{"__mount_point"}->{$mount_point}->{device}, "/mnt$mount_point",
+      mount "/dev/".$self->{"__mount_point"}->{$mount_point}->{device}, "/mnt$mount_point",
          fs => $self->{"__mount_point"}->{$mount_point}->{fstype};
    }
 }
@@ -133,6 +133,8 @@ sub _download_image {
 
    chdir "/mnt";
    run "wget $url";
+   my ($tar) = ($url =~ m/.*\/(.*?)$/);
+   run "tar xzf $tar";
 }
 
 sub _chroot {
@@ -142,7 +144,7 @@ sub _chroot {
    if($pid == 0) {
       cp "/etc/hosts", "/mnt/etc/hosts";
       cp "/etc/resolv.conf", "/mnt/etc/resolv.conf";
-      run "echo 127.0.2.1 nfs-image >>/etc/hosts";
+      run "echo 127.0.2.1 nfs-image >>/mnt/etc/hosts";
       
       chroot "/mnt";
       chdir "/";
@@ -152,10 +154,29 @@ sub _chroot {
       run "mount /dev";
       run "mount /dev/pts";
 
+      my $fh = file_write "/etc/fstab";
+      $fh->write("proc  /proc proc  nodev,noexec,nosuid  0  0\n");
+
+      for my $mount_point (keys %{ $self->{"__mount_point"} }) {
+         my $dev = "/dev/".$self->{"__mount_point"}->{$mount_point}->{device};
+         my $fs  = $self->{"__mount_point"}->{$mount_point}->{fstype};
+         if($mount_point eq "swap") {
+            $fh->write("$dev  none  swap  sw 0  0\n");
+            next;
+         }
+
+         $fh->write("$dev  $mount_point   $fs   errors=remount-ro 0  1\n");
+      }
+      $fh->close;
+
       $self->_base_configuration($conf->{system});
       $self->_network_configuration($conf->{network});
       $self->_authentication($conf->{authentication});
       $self->_install_packages($conf->{packages});
+
+      rm "/boot/grub/menu.lst";
+      run "update-grub -y";
+      run "update-initramfs -k all -c";
 
       $self->_write_mbr($conf->{boot});
 
@@ -169,6 +190,7 @@ sub _chroot {
    else {
       waitpid($pid, 0);
       say "Long lost child came home... continuing work...";
+      run "umount /mnt";
    }
 }
 
@@ -194,6 +216,9 @@ sub _base_configuration {
 
 sub _network_configuration {
    my ($self, $conf) = @_;
+
+   file "/etc/network/interfaces",
+      content => "auto lo\niface lo inet loopback\n\n";
 
    for my $device (keys %{ $conf }) {
       network $device, %{ $conf->{$device} };
