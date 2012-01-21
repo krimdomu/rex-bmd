@@ -85,7 +85,16 @@ deb http://stage.rex.linux-files.org/ubuntu/ $codename rex
 
 sub get_codename_for {
    my ($self, $version) = @_;
-   return "oneiric" if($version eq "11.10");
+
+   my %codename_for = (
+      "10.04" => "lucid",
+      "10.10" => "maverick",
+      "11.04" => "natty",
+      "11.10" => "oneiric",
+      "12.04" => "precise",
+   );
+
+   return $codename_for{$version};
 }
 
 1;
