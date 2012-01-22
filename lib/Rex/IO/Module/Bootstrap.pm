@@ -22,6 +22,7 @@ use Rex::Commands::System;
 use Rex::Commands::Network;
 use Rex::Commands::User;
 use Rex::Commands::Pkg;
+use Rex::Commands::Gather;
 
 use YAML;
 
@@ -175,7 +176,7 @@ sub _chroot {
       $self->_install_packages($conf->{packages});
 
       rm "/boot/grub/menu.lst";
-      run "update-grub -o /boot/grub/menu.lst";
+      #run "update-grub -o /boot/grub/menu.lst";
       run "rm -f /boot/initrd*";
       run "update-initramfs -k all -c";
       run "update-grub";

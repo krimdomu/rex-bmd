@@ -140,8 +140,13 @@ sub call {
          file "/boot/grub/menu.lst",
             content => "";
 
+         if(operating_system_version() =~ m/^5/) {
+            # on debian 5 create a special file
+            file "/etc/kernel-img.conf",
+               content => "do_initrd=yes\n";
+         }
 
-         install package => [qw/wget grub 
+         install package => [qw/wget grub-pc
                                 parted perl syslinux locales
                                 libwww-perl libyaml-perl initramfs-tools/];
 
