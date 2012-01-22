@@ -182,6 +182,10 @@ sub _chroot {
 
       $self->_write_mbr($conf->{boot});
 
+      if(is_debian) {
+         run "chmod 755 /etc/init.d/networking";
+      }
+
       run "umount /proc";
       run "umount /sys";
 
