@@ -2,12 +2,12 @@ Source: rex-io
 Section: admin
 Priority: optional
 Maintainer: Jan Gehring <jan.gehring@gmail.com>
-Build-Depends: debhelper (>= 7)
+Build-Depends: debhelper (>= 7) rex (>=0.23.99.24)
 Build-Depends-Indep: perl
 Standards-Version: 3.9.2
 Homepage: http://search.cpan.org/dist/Rex-IO/
 
 Package: rex-io
 Architecture: all
-Depends: ${misc:Depends}, ${perl:Depends}, rex (>=0.23)
+Depends: ${misc:Depends}, ${perl:Depends}, rex (>=0.23.99.24)
 Description: Deployment CLI

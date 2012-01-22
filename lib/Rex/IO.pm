@@ -13,7 +13,7 @@ require Rex::IO::Args;
 use Data::Dumper;
 use Rex::Commands;
 
-our $VERSION = "0.0.27";
+our $VERSION = "0.0.28";
 
 sub new {
    my $that = shift;
