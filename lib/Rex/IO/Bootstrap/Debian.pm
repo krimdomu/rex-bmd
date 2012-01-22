@@ -142,7 +142,7 @@ sub call {
 
 
          install package => [qw/wget grub 
-                                parted perl syslinux
+                                parted perl syslinux locales
                                 libwww-perl libyaml-perl initramfs-tools/];
 
          install package => $self->get_kernel($arch);
@@ -174,6 +174,9 @@ iface eth0 inet dhcp
 
          my $kversion = run "ls /boot/vmlinuz-* | perl -lne 'print \$1 if /vmlinuz-([0-9\.\-]+)-server/'";
 
+         if(is_file("/etc/udev/rules.d/70-persistent-net.rules")) {
+            rm "/etc/udev/rules.d/70-persistent-net.rules";
+         }
 
          say "Generating new initramfs";
          run "rm -f /boot/initrd*";

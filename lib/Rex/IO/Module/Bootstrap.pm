@@ -175,9 +175,10 @@ sub _chroot {
       $self->_install_packages($conf->{packages});
 
       rm "/boot/grub/menu.lst";
-      run "update-grub -y";
+      run "update-grub -o /boot/grub/menu.lst";
       run "rm -f /boot/initrd*";
       run "update-initramfs -k all -c";
+      run "update-grub";
 
       $self->_write_mbr($conf->{boot});
 
