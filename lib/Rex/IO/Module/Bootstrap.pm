@@ -145,14 +145,14 @@ sub _chroot {
       cp "/etc/hosts", "/mnt/etc/hosts";
       cp "/etc/resolv.conf", "/mnt/etc/resolv.conf";
       run "echo 127.0.2.1 nfs-image >>/mnt/etc/hosts";
+
+      run "mount -obind /dev /mnt/dev";
       
       chroot "/mnt";
       chdir "/";
 
-      run "mount /proc";
-      run "mount /sys";
-      run "mount /dev";
-      run "mount /dev/pts";
+      run "mount -t proc proc /proc";
+      run "mount -t sysfs sysfs /sys";
 
       my $fh = file_write "/etc/fstab";
       $fh->write("proc  /proc proc  nodev,noexec,nosuid  0  0\n");
@@ -176,12 +176,11 @@ sub _chroot {
 
       rm "/boot/grub/menu.lst";
       run "update-grub -y";
+      run "rm -f /boot/initrd*";
       run "update-initramfs -k all -c";
 
       $self->_write_mbr($conf->{boot});
 
-      run "umount /dev/pts";
-      run "umount /dev";
       run "umount /proc";
       run "umount /sys";
 
@@ -190,6 +189,7 @@ sub _chroot {
    else {
       waitpid($pid, 0);
       say "Long lost child came home... continuing work...";
+      run "umount /mnt/dev";
       run "umount /mnt";
       run "sync";
       run "/sbin/reboot";

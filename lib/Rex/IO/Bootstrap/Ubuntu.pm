@@ -102,5 +102,11 @@ sub get_mirror {
    return "http://us.archive.ubuntu.com/ubuntu";
 }
 
+sub get_kernel {
+   my ($self, $arch) = @_;
+   return "linux-image-server";
+}
+
+
 
 1;

@@ -74,6 +74,11 @@ sub get_mirror {
    return "http://ftp.de.debian.org/debian";
 }
 
+sub get_kernel {
+   my ($self, $arch) = @_;
+   return "linux-image-2.6-$arch";
+}
+
 
 sub call {
    my ($self) = @_;
@@ -93,7 +98,7 @@ sub call {
 
    if(is_debian) {
       say "Creating nfs-image...";
-      run "debootstrap $codename nfs-image/filesystem.d " . $self->get_mirror() . " 2>&1 >log/bootstrap.log";
+      run "debootstrap --arch=$arch $codename nfs-image/filesystem.d " . $self->get_mirror() . " 2>&1 >log/bootstrap.log";
    }
    else {
       print "To create debian/ubuntu images you must use a debian/ubuntu system.";
@@ -109,12 +114,11 @@ sub call {
    # forking the chrooted task
    my $pid = fork;
    if($pid == 0) {
+      run "mount -obind /dev $::path/nfs-image/filesystem.d/dev";
       chroot "$::path/nfs-image/filesystem.d/";
       chdir "/";
-      run "mount /proc";
-      run "mount /sys";
-      run "mount /dev";
-      run "mount /dev/pts";
+      run "mount -t proc proc /proc";
+      run "mount -t sysfs sysfs /sys";
 
       if(is_debian) {
          say "Running apt-get update";
@@ -136,9 +140,12 @@ sub call {
          file "/boot/grub/menu.lst",
             content => "";
 
-         install package => [qw/wget grub linux-image-server
+
+         install package => [qw/wget grub 
                                 parted perl syslinux
-                                libwww-perl libyaml-perl/];
+                                libwww-perl libyaml-perl initramfs-tools/];
+
+         install package => $self->get_kernel($arch);
 
          file "/etc/hostname",
             content => "nfs-image\n";
@@ -167,27 +174,31 @@ iface eth0 inet dhcp
 
          my $kversion = run "ls /boot/vmlinuz-* | perl -lne 'print \$1 if /vmlinuz-([0-9\.\-]+)-server/'";
 
-         say "Generating new initramfs for linux-image-server-$kversion";
-         say join("\n", run "update-initramfs -c -k $kversion-server -b /boot");
+
+         say "Generating new initramfs";
+         run "rm -f /boot/initrd*";
+         say join("\n", run "update-initramfs -c -k all -b /boot");
 
       }
 
 
-      run "umount /dev/pts";
       run "umount /proc";
       run "umount /sys";
-      run "umount /dev";
 
       exit; # exit fork
    }
    else {
       waitpid($pid, 0);
       say "Long lost child came home... continuing work...";
+      run "umount $::path/nfs-image/filesystem.d/dev";
    }
 
    say "Creating baseimgage";
    cp "nfs-image/filesystem.d/etc/initramfs-tools/initramfs.conf.bak", "nfs-image/filesystem.d/etc/initramfs-tools/initramfs.conf";
-   run "cd nfs-image/filesystem.d; tar czf $::path/base-image/\L$dist-$version.tar.gz *";
+   run "cd nfs-image/filesystem.d; tar czf $::path/base-image/\L$dist-$version-$arch.tar.gz *";
+
+   # make problems for nfs boot
+   run "chmod 0 $::path/nfs-image/filesystem.d/etc/init.d/networking";
 
    file "$::path/nfs-image/filesystem.d/etc/rc.local",
       mode    => 777,
@@ -204,8 +215,6 @@ export HOME=/root
    my $kernel = run "ls tftpd-root/vmlinuz*";
    my $initrd = run "ls tftpd-root/initrd*";
 
-   my $ip = "IP-OF-YOUR-DNS-SERVER";
-
    $kernel =~ s/^tftpd-root\///;
    $initrd =~ s/^tftpd-root\///;
 
@@ -217,7 +226,7 @@ DEFAULT RexOsDeployment
   
 LABEL RexOsDeployment
 KERNEL $kernel
-APPEND root=/dev/nfs initrd=$initrd nfsroot=$ip:$::path/nfs-image/filesystem.d ip=dhcp rw REXIO_BOOTSTRAP_FILE=http://$ip/rex-bootstrap.yml
+APPEND root=/dev/nfs initrd=$initrd nfsroot=IP-OF-YOUR-NFS-SERVER:$::path/nfs-image/filesystem.d ip=dhcp rw REXIO_BOOTSTRAP_FILE=http://IP-OF-YOUR-HTTP-SERVER/default.yml
 
 ";
 
