@@ -147,7 +147,7 @@ sub call {
          }
 
          install package => [qw/wget grub-pc
-                                parted perl syslinux locales
+                                parted perl syslinux locales lvm2
                                 libwww-perl libyaml-perl initramfs-tools/];
 
          install package => $self->get_kernel($arch);

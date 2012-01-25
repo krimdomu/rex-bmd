@@ -23,6 +23,7 @@ use Rex::Commands::Network;
 use Rex::Commands::User;
 use Rex::Commands::Pkg;
 use Rex::Commands::Gather;
+use Rex::Commands::LVM;
 
 use YAML;
 
@@ -103,10 +104,28 @@ sub _partition {
 
       delete $partitions->{clear};
    }
+
+   # first create the lvm volumes
+   for my $partition ( keys %{$partitions} ) {
+      if(exists $partitions->{$partition}->{vg}) {
+         partition($partition, %{ $partitions->{$partition} });
+         delete $partitions->{$partition};
+      }
+   }
    
    for my $mount_point (keys %{$partitions}) {
       $self->{"__mount_point"}->{$mount_point} = $partitions->{$mount_point};
-      my $device = partition($mount_point, %{ $partitions->{$mount_point} });
+      my $device;
+      if(exists $partitions->{$mount_point}->{onvg}) {
+         my $lv_name = $mount_point;
+         $lv_name = "root" if($lv_name eq "/");
+         $lv_name =~ s/\//-/g;
+         lvcreate($lv_name, %{ $partitions->{$mount_point} });
+         $device = $partitions->{$mount_point}->{onvg} . "/$lv_name";
+      }
+      else {
+         $device = partition($mount_point, %{ $partitions->{$mount_point} });
+      }
       $self->{"__mount_point"}->{$mount_point}->{"device"} = $device;
    }
 }
@@ -187,17 +206,20 @@ sub _chroot {
          run "chmod 755 /etc/init.d/networking";
       }
 
-      run "umount /proc";
-      run "umount /sys";
+      #run "umount /proc";
+      #run "umount /sys";
 
       exit; # exit child
    }
    else {
       waitpid($pid, 0);
       say "Long lost child came home... continuing work...";
+      run "sync";
       run "umount /mnt/dev";
       run "umount /mnt";
-      run "sync";
+      if($? != 0) {
+         run "mount -oremount,ro /mnt";
+      }
       run "/sbin/reboot";
    }
 }
