@@ -95,7 +95,20 @@ sub write_boot_record {
    $system->write_boot_record(@_);
 }
 
+sub hostname {
+   my $system = Rex::System->get;
+   $system->hostname(@_);
+}
 
+sub domainname {
+   my $system = Rex::System->get;
+   $system->domainname(@_);
+}
+
+sub network {
+   my $system = Rex::System->get;
+   $system->network(@_);
+}
 
 
 1;

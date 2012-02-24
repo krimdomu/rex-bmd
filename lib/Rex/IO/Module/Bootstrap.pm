@@ -244,11 +244,11 @@ sub _base_configuration {
    }
 
    if(exists $conf->{hostname}) {
-      hostname $conf->{hostname};
+      Rex::Commands::System::hostname $conf->{hostname};
    }
 
    if(exists $conf->{domainname}) {
-      domainname $conf->{domainname};
+      Rex::Commands::System::domainname $conf->{domainname};
    }
 
 }
@@ -260,7 +260,7 @@ sub _network_configuration {
       content => "auto lo\niface lo inet loopback\n\n";
 
    for my $device (keys %{ $conf }) {
-      network $device, %{ $conf->{$device} };
+      Rex::Commands::System::network $device, %{ $conf->{$device} };
    }
 }
 
