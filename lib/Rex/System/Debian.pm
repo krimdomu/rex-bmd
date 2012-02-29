@@ -173,7 +173,16 @@ sub network {
 sub write_boot_record {
    my ($self, $hd) = @_;
    Rex::Logger::info("Writing new MBR");
-   run "grub-install /dev/$hd";
+
+   rm "/boot/grub/menu.lst";
+   #run "update-grub -o /boot/grub/menu.lst";
+   run "rm -f /boot/initrd*";
+
+   run "update-initramfs -k all -c";
+
+   run "grub-mkdevicemap --no-floppy";
+   run "grub-install --no-floppy /dev/$hd";
+   run "update-grub";
 }
 
 sub hostname {
