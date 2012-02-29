@@ -83,14 +83,18 @@ sub call {
 sub _install {
    my ($self, $conf) = @_;
 
+   _dprint("Partitioning Harddisk");
    $self->_partition($conf->{partitions});
 
+   _dprint("Mounting Filesystems");
    mkdir "/mnt" unless(is_dir("/mnt"));
    $self->_mount;
 
    my $url = $conf->{Url} || $conf->{url};
+   _dprint("Downloading Image from $url");
    $self->_download_image($url);
 
+   _dprint("Chrooting...");
    $self->_chroot($conf);
 
 }
@@ -162,18 +166,24 @@ sub _chroot {
 
    my $pid = fork;
    if($pid == 0) {
+
+      _dprint("In the child...");
+
       cp "/etc/hosts", "/mnt/etc/hosts";
       cp "/etc/resolv.conf", "/mnt/etc/resolv.conf";
       run "echo 127.0.2.1 nfs-image >>/mnt/etc/hosts";
 
       run "mount -obind /dev /mnt/dev";
       
+      _dprint("chrooting to /mnt");
       chroot "/mnt";
       chdir "/";
 
+      _dprint("Mounting proc and sys");
       run "mount -t proc proc /proc";
       run "mount -t sysfs sysfs /sys";
 
+      _dprint("Writing fstab");
       my $fh = file_write "/etc/fstab";
       $fh->write("proc  /proc proc  nodev,noexec,nosuid  0  0\n");
 
@@ -189,17 +199,16 @@ sub _chroot {
       }
       $fh->close;
 
+      _dprint("Configuring basesystem");
       $self->_base_configuration($conf->{system});
+      _dprint("Doing network configuration");
       $self->_network_configuration($conf->{network});
+      _dprint("Configuring authentication");
       $self->_authentication($conf->{authentication});
+      _dprint("Installing additional packages");
       $self->_install_packages($conf->{packages});
 
-      rm "/boot/grub/menu.lst";
-      #run "update-grub -o /boot/grub/menu.lst";
-      run "rm -f /boot/initrd*";
-      run "update-initramfs -k all -c";
-      run "update-grub";
-
+      _dprint("Writing MBR");
       $self->_write_mbr($conf->{boot});
 
       if(is_debian) {
@@ -215,12 +224,12 @@ sub _chroot {
       waitpid($pid, 0);
       say "Long lost child came home... continuing work...";
       run "sync";
-      run "umount /mnt/dev";
-      run "umount /mnt";
+      #run "umount /mnt/dev";
+      #run "umount /mnt";
       if($? != 0) {
-         run "mount -oremount,ro /mnt";
+         #run "mount -oremount,ro /mnt";
       }
-      run "/sbin/reboot";
+#      run "/sbin/reboot";
    }
 }
 
@@ -285,6 +294,13 @@ sub _write_mbr {
       content => cat "/proc/mounts";
 
    write_boot_record $conf->{write_to};
+}
+
+sub _dprint {
+   print "-------------------------------------------------------------------------------\n";
+   print shift(@_);
+   print "\n";
+   print "-------------------------------------------------------------------------------\n";
 }
 
 1;
