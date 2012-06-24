@@ -1,20 +1,14 @@
 =pod
 
-=head1 rex.io - A deployment cli 
+=head1 Rex::IO::BMD - A bare metal deployer
 
-With rex.io it is possible to do automated deployments of hardware and virtual machines.
-
-rex.io is in a very early development stage (alpha). Currently it supports Ubuntu 10.04, 11.04 and 11.10.
+With Rex::IO::BMD it is possible to do automated deployments of hardware and virtual machines.
 
 =head2 Dependencies
 
 To deploy your hardware/vms you need a working dhcpd server and a tfptd server.
 
 =head2 Example
-
-This will create a nfs-image and a base image for deployment.
-
- bash# rex.io --module=Bootstrap --dist=Ubuntu --version=11.10 --arch=amd64
 
 You can describe the installation with a simple YAML file.
 
