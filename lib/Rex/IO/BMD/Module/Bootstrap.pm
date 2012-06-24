@@ -4,12 +4,12 @@
 # vim: set ts=3 sw=3 tw=0:
 # vim: set expandtab:
    
-package Rex::IO::Module::Bootstrap;
+package Rex::IO::BMD::Module::Bootstrap;
    
 use strict;
 use warnings;
 
-require Rex::IO::Args;
+require Rex::IO::BMD::Args;
 require LWP::Simple;
 
 use Data::Dumper;
@@ -18,14 +18,18 @@ use Rex::Commands::Run;
 use Rex::Commands::Fs;
 use Rex::Commands::File;
 use Rex::Commands::Partition;
-use Rex::Commands::System;
+use Rex::IO::BMD::Commands::System;
 use Rex::Commands::Network;
 use Rex::Commands::User;
 use Rex::Commands::Pkg;
 use Rex::Commands::Gather;
 use Rex::Commands::LVM;
 
+use Rex::IO::BMD;
+
 use YAML;
+
+my $root_mount = "/mnt-os";
 
 sub new {
    my $that = shift;
@@ -83,18 +87,17 @@ sub call {
 sub _install {
    my ($self, $conf) = @_;
 
-   _dprint("Partitioning Harddisk");
+   Rex::IO::BMD->d_print("Partitioning Harddisk", 1);
    $self->_partition($conf->{partitions});
 
-   _dprint("Mounting Filesystems");
-   mkdir "/mnt" unless(is_dir("/mnt"));
+   Rex::IO::BMD->d_print("Mounting Filesystems", 1);
+   mkdir "${root_mount}" unless(is_dir("${root_mount}"));
    $self->_mount;
 
    my $url = $conf->{Url} || $conf->{url};
-   _dprint("Downloading Image from $url");
+   Rex::IO::BMD->d_print("Downloading Image from $url", 1);
    $self->_download_image($url);
 
-   _dprint("Chrooting...");
    $self->_chroot($conf);
 
 }
@@ -138,7 +141,7 @@ sub _mount {
    my ($self) = @_;
    my $root_device = $self->{"__mount_point"}->{"/"};
 
-   mount "/dev/".$root_device->{"device"}, "/mnt",
+   mount "/dev/".$root_device->{"device"}, "${root_mount}",
       fs => $root_device->{"fstype"};
 
    for my $mount_point (keys %{ $self->{"__mount_point"} }) {
@@ -146,8 +149,8 @@ sub _mount {
       next if($mount_point eq "swap");
       next if($mount_point eq "none");
 
-      mkdir "/mnt$mount_point" unless(is_dir("/mnt$mount_point"));
-      mount "/dev/".$self->{"__mount_point"}->{$mount_point}->{device}, "/mnt$mount_point",
+      mkdir "${root_mount}$mount_point" unless(is_dir("${root_mount}$mount_point"));
+      mount "/dev/".$self->{"__mount_point"}->{$mount_point}->{device}, "${root_mount}$mount_point",
          fs => $self->{"__mount_point"}->{$mount_point}->{fstype};
    }
 }
@@ -155,7 +158,7 @@ sub _mount {
 sub _download_image {
    my ($self, $url) = @_;
 
-   chdir "/mnt";
+   chdir "${root_mount}";
    run "wget $url";
    my ($tar) = ($url =~ m/.*\/(.*?)$/);
    run "tar xzf $tar";
@@ -164,26 +167,25 @@ sub _download_image {
 sub _chroot {
    my ($self, $conf) = @_;
 
+   Rex::IO::BMD->d_print("Forking to chroot", 1);
    my $pid = fork;
    if($pid == 0) {
 
-      _dprint("In the child...");
+      cp "/etc/hosts", "${root_mount}/etc/hosts";
+      cp "/etc/resolv.conf", "${root_mount}/etc/resolv.conf";
+      run "echo 127.0.2.1 nfs-image >>${root_mount}/etc/hosts";
 
-      cp "/etc/hosts", "/mnt/etc/hosts";
-      cp "/etc/resolv.conf", "/mnt/etc/resolv.conf";
-      run "echo 127.0.2.1 nfs-image >>/mnt/etc/hosts";
-
-      run "mount -obind /dev /mnt/dev";
+      run "mount -obind /dev ${root_mount}/dev";
       
-      _dprint("chrooting to /mnt");
-      chroot "/mnt";
+      Rex::IO::BMD->d_print("chrooting to ${root_mount}", 1);
+      chroot "${root_mount}";
       chdir "/";
 
-      _dprint("Mounting proc and sys");
+      Rex::IO::BMD->d_print("Mounting proc and sys", 1);
       run "mount -t proc proc /proc";
       run "mount -t sysfs sysfs /sys";
 
-      _dprint("Writing fstab");
+      Rex::IO::BMD->d_print("Writing fstab", 1);
       my $fh = file_write "/etc/fstab";
       $fh->write("proc  /proc proc  nodev,noexec,nosuid  0  0\n");
 
@@ -199,16 +201,18 @@ sub _chroot {
       }
       $fh->close;
 
-      _dprint("Configuring basesystem");
+      Rex::IO::BMD->d_print("Configuring System", 1);
+      Rex::IO::BMD->d_print(" - base");
       $self->_base_configuration($conf->{system});
-      _dprint("Doing network configuration");
+      Rex::IO::BMD->d_print(" - network");
       $self->_network_configuration($conf->{network});
-      _dprint("Configuring authentication");
+      Rex::IO::BMD->d_print(" - authentication");
       $self->_authentication($conf->{authentication});
-      _dprint("Installing additional packages");
+
+      Rex::IO::BMD->d_print("Installing additional packages", 1);
       $self->_install_packages($conf->{packages});
 
-      _dprint("Writing MBR");
+      Rex::IO::BMD->d_print("Writing MBR", 1);
       $self->_write_mbr($conf->{boot});
 
       if(is_debian) {
@@ -217,19 +221,20 @@ sub _chroot {
 
       #run "umount /proc";
       #run "umount /sys";
+      Rex::IO::BMD->d_print("Finished jobs in chroot", 1);
 
       exit; # exit child
    }
    else {
       waitpid($pid, 0);
-      say "Long lost child came home... continuing work...";
+      Rex::IO::BMD->d_print("Long lost child came home... Unmounting and rebooting...", 1);
       run "sync";
-      #run "umount /mnt/dev";
-      #run "umount /mnt";
+      run "umount ${root_mount}/dev";
+      run "umount ${root_mount}";
       if($? != 0) {
-         #run "mount -oremount,ro /mnt";
+         run "mount -oremount,ro ${root_mount}";
       }
-#      run "/sbin/reboot";
+      run "/sbin/reboot";
    }
 }
 
@@ -237,27 +242,33 @@ sub _base_configuration {
    my ($self, $conf) = @_;
 
    if(exists $conf->{default_language}) {
+      Rex::IO::BMD->d_print("   - default language");
       default_language $conf->{default_language};
    }
 
    if(exists $conf->{languages}) {
+      Rex::IO::BMD->d_print("   - locales");
       languages @{ $conf->{languages} };
    }
 
    if(exists $conf->{timezone}) {
+      Rex::IO::BMD->d_print("   - timezone");
       timezone $conf->{timezone};
    }
 
    if(exists $conf->{keyboard}) {
+      Rex::IO::BMD->d_print("   - keyboard");
       keyboard $conf->{keyboard};
    }
 
    if(exists $conf->{hostname}) {
-      Rex::Commands::System::hostname $conf->{hostname};
+      Rex::IO::BMD->d_print("   - hostname");
+      Rex::IO::BMD::Commands::System::hostname($conf->{hostname});
    }
 
    if(exists $conf->{domainname}) {
-      Rex::Commands::System::domainname $conf->{domainname};
+      Rex::IO::BMD->d_print("   - domainname");
+      Rex::IO::BMD::Commands::System::domainname($conf->{domainname});
    }
 
 }
@@ -265,11 +276,13 @@ sub _base_configuration {
 sub _network_configuration {
    my ($self, $conf) = @_;
 
+   Rex::IO::BMD->d_print("   - interfaces");
    file "/etc/network/interfaces",
       content => "auto lo\niface lo inet loopback\n\n";
 
    for my $device (keys %{ $conf }) {
-      Rex::Commands::System::network $device, %{ $conf->{$device} };
+      Rex::IO::BMD->d_print("      - $device");
+      Rex::IO::BMD::Commands::System::network($device, %{ $conf->{$device} });
    }
 }
 
@@ -277,12 +290,22 @@ sub _authentication {
    my ($self, $conf) = @_;
 
    for my $user (keys %{ $conf }) {
+      Rex::IO::BMD->d_print("   - $user");
       create_user $user, %{ $conf->{$user} };
    }
 }
 
 sub _install_packages {
    my ($self, $conf) = @_;
+
+   if(ref($conf)) {
+      for my $pkg (@{$conf}) {
+         Rex::IO::BMD->d_print("   - $pkg");
+      }
+   }
+   else {
+      Rex::IO::BMD->d_print("   - $conf");
+   }
 
    install package => $conf;
 }
@@ -296,11 +319,5 @@ sub _write_mbr {
    write_boot_record $conf->{write_to};
 }
 
-sub _dprint {
-   print "-------------------------------------------------------------------------------\n";
-   print shift(@_);
-   print "\n";
-   print "-------------------------------------------------------------------------------\n";
-}
 
 1;

@@ -4,7 +4,7 @@
 # vim: set ts=3 sw=3 tw=0:
 # vim: set expandtab:
    
-package Rex::System;
+package Rex::IO::BMD::System;
    
 use strict;
 use warnings;
@@ -24,7 +24,7 @@ sub get {
       $host->{"operatingsystem"} = "Redhat";
    }
 
-   my $class = "Rex::System::" . $host->{"operatingsystem"};
+   my $class = "Rex::IO::BMD::System::" . $host->{"operatingsystem"};
 
    Rex::Logger::debug("system using class: $class");
    eval "use $class";

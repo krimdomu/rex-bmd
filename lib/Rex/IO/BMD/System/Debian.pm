@@ -4,7 +4,7 @@
 # vim: set ts=3 sw=3 tw=0:
 # vim: set expandtab:
    
-package Rex::System::Debian;
+package Rex::IO::BMD::System::Debian;
    
 use strict;
 use warnings;
@@ -175,7 +175,7 @@ sub write_boot_record {
    Rex::Logger::info("Writing new MBR");
 
    rm "/boot/grub/menu.lst";
-   #run "update-grub -o /boot/grub/menu.lst";
+   run "update-grub -o /boot/grub/menu.lst";
    run "rm -f /boot/initrd*";
 
    run "update-initramfs -k all -c";

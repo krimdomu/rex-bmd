@@ -4,12 +4,12 @@
 # vim: set ts=3 sw=3 tw=0:
 # vim: set expandtab:
    
-package Rex::IO::Bootstrap::Debian;
+package Rex::IO::BMD::Bootstrap::Debian;
    
 use strict;
 use warnings;
 
-require Rex::IO::Args;
+require Rex::IO::BMD::Args;
 
 use Cwd qw(getcwd);
 
@@ -83,7 +83,7 @@ sub get_kernel {
 sub call {
    my ($self) = @_;
 
-   my $args    = Rex::IO::Args->get;
+   my $args    = Rex::IO::BMD::Args->get;
 
    my $dist    = $args->{dist};
    my $version = $args->{version};

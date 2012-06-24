@@ -11,15 +11,16 @@ use strict;
 use warnings;
 
 use Cwd qw(getcwd);
-use Rex::IO;
-use Rex::IO::Args;
+use Rex::IO::BMD;
+use Rex::IO::BMD::Args;
+use Rex::Logger;
 
-if($< == 0 && $> == 0) {
+if(1 || $< == 0 && $> == 0) {
    $::path = getcwd;
-   my $rex_io = Rex::IO->new(path => $::path);
-   $rex_io->call;
+   my $rex_io_bmd = Rex::IO::BMD->new(path => $::path);
+   $rex_io_bmd->call;
 }
 else {
-   print "Please run rex.io with as root.\n";
+   print "Please run rex_io_bmd as root.\n";
    exit 1;
 }

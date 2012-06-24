@@ -7,7 +7,7 @@
    
 =head1 NAME
 
-Rex::Commands::System - System specific functions
+Rex::IO::BMD::Commands::System - System specific functions
 
 =head1 DESCRIPTION
 
@@ -15,7 +15,7 @@ With this Module you can manage some system specific configurations.
 
 =head1 SYNOPSIS
 
- use Rex::Commands::System;
+ use Rex::IO::BMD::Commands::System;
      
 
 =head1 EXPORTED FUNCTIONS
@@ -24,7 +24,7 @@ With this Module you can manage some system specific configurations.
 
 =cut
 
-package Rex::Commands::System;
+package Rex::IO::BMD::Commands::System;
    
 use strict;
 use warnings;
@@ -33,7 +33,7 @@ require Exporter;
 use base qw(Exporter);
 use vars qw(@EXPORT);
 
-use Rex::System;
+use Rex::IO::BMD::System;
 
 @EXPORT = qw(default_language languages keyboard timezone write_boot_record);
 
@@ -45,7 +45,7 @@ Set the default language.
 
 =cut
 sub default_language {
-   my $system = Rex::System->get;
+   my $system = Rex::IO::BMD::System->get;
    $system->default_language(@_);
 }
 
@@ -57,7 +57,7 @@ Set all available languages on a system.
 
 =cut
 sub languages {
-   my $system = Rex::System->get;
+   my $system = Rex::IO::BMD::System->get;
    $system->languages(@_);
 }
 
@@ -69,7 +69,7 @@ Set the keymap of a system.
 
 =cut
 sub keyboard {
-   my $system = Rex::System->get;
+   my $system = Rex::IO::BMD::System->get;
    $system->keyboard(@_);
 }
 
@@ -81,7 +81,7 @@ Set the timezone of a system.
 
 =cut
 sub timezone {
-   my $system = Rex::System->get;
+   my $system = Rex::IO::BMD::System->get;
    $system->timezone(@_)
 }
 
@@ -91,22 +91,22 @@ This function tries to write the boot record. Currently it supports only grub (v
 
 =cut
 sub write_boot_record {
-   my $system = Rex::System->get;
+   my $system = Rex::IO::BMD::System->get;
    $system->write_boot_record(@_);
 }
 
 sub hostname {
-   my $system = Rex::System->get;
+   my $system = Rex::IO::BMD::System->get;
    $system->hostname(@_);
 }
 
 sub domainname {
-   my $system = Rex::System->get;
+   my $system = Rex::IO::BMD::System->get;
    $system->domainname(@_);
 }
 
 sub network {
-   my $system = Rex::System->get;
+   my $system = Rex::IO::BMD::System->get;
    $system->network(@_);
 }
 

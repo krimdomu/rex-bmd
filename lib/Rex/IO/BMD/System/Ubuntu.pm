@@ -4,14 +4,14 @@
 # vim: set ts=3 sw=3 tw=0:
 # vim: set expandtab:
    
-package Rex::System::Ubuntu;
+package Rex::IO::BMD::System::Ubuntu;
    
 use strict;
 use warnings;
 
-use Rex::System::Debian;
+use Rex::IO::BMD::System::Debian;
 
-use base qw(Rex::System::Debian);
+use base qw(Rex::IO::BMD::System::Debian);
 
 sub new {
    my $that = shift;

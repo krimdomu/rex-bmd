@@ -9,8 +9,8 @@ package Rex::IO::Bootstrap::Ubuntu;
 use strict;
 use warnings;
 
-use Rex::IO::Bootstrap::Debian;
-use base qw(Rex::IO::Bootstrap::Debian);
+use Rex::IO::BMD::Bootstrap::Debian;
+use base qw(Rex::IO::BMD::Bootstrap::Debian);
 
 use Rex::Commands;
 use Rex::Commands::Run;
